@@ -31,6 +31,7 @@ class LitLabelStudio(la.LightningFlow):
             cloud_build_config=LabelStudioBuildConfig(),
             )
         self.drive = Drive(drive_name)    
+        self.count = 0
 
 
     def start_label_studio(self):
@@ -51,16 +52,18 @@ class LitLabelStudio(la.LightningFlow):
                 # label-studio/label_studio/core/settings/base.py
                 # label-studio/label_studio/core/middleware.py
                 # https://docs.djangoproject.com/en/4.0/ref/clickjacking/
-                # export LABEL_STUDIO_X_FRAME_OPTIONS=sameorigin # allowall, allow-from *, deny
+                # export LABEL_STUDIO_X_FRAME_OPTIONS=sameorgin # allowall, allow-from *, deny
                 'USE_ENFORCE_CSRF_CHECKS':'false',
-                'LABEL_STUDIO_X_FRAME_OPTIONS':'sameorigin', 
+                'LABEL_STUDIO_X_FRAME_OPTIONS':'sameorgin', 
                 'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED':'true', 
                 'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT':os.path.abspath(os.getcwd())
                 },
             cwd=label_studio_dir)
+        self.count += 1
 
     def run(self):
-        self.start_label_studio()
+        if self.count == 0:
+            self.start_label_studio()
 
     def configure_layout(self):
         return({"name": "Annotate", "content": self.label_studio})
