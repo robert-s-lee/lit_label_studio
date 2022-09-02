@@ -43,7 +43,7 @@ class LitLabelStudio(la.LightningFlow):
           cwd=label_studio_dir)
 
         self.label_studio.run(
-            "python label_studio/manage.py runserver {host}:{port}", 
+            "python label_studio/manage.py runserver $host:$port", 
             venv_name=label_studio_venv,
             wait_for_exit=False,    
             env={
@@ -60,7 +60,7 @@ class LitLabelStudio(la.LightningFlow):
             cwd=label_studio_dir)
 
     def run(self):
-      self.start_label_studio()
+        self.start_label_studio()
 
     def configure_layout(self):
         return({"name": "Annotate", "content": self.label_studio})
