@@ -10,9 +10,23 @@ lightning init component lit_label_studio
 
 First, install lit_label_studio (warning: this app has not been officially approved on the lightning gallery):
 
+- Option git clone
 ```bash
-lightning install component https://github.com/robert-s-lee/lit_label_studio
+git clone  https://github.com/robert-s-lee/lit_label_studio
+cd lit_label_studio
+python -m pip install -e .
 ```
+
+- Option pip install
+```bash
+python -m pip install  https://github.com/robert-s-lee/lit_label_studio/archive/refs/tags/0.0.0.tar.gz
+```
+
+- Option lightning install
+```bash
+lightning install component https://github.com/robert-s-lee/lit_label_studio.git@main
+```
+
 
 - Setup virtualenv
   
