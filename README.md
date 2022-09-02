@@ -8,7 +8,7 @@ lightning init component lit_label_studio
 
 ## To run lit_label_studio
 
-First, install lit_label_studio (warning: this app has not been officially approved on the lightning gallery):
+First, install lit_label_studio (warning: this app has not been officially approved on the lightning gallery).  This also uses Label Studio fork with x-frame-options support required for iFrame.
 
 - Option git clone
 ```bash
@@ -27,8 +27,7 @@ python -m pip install  https://github.com/robert-s-lee/lit_label_studio/archive/
 lightning install component https://github.com/robert-s-lee/lit_label_studio.git@main
 ```
 
-
-- Setup virtualenv
+## Setup lit_label_studio virtualenv
   
 NOTE: Use `Conda` for Lightning and use `venv` for Label Studio. 
 Label Studio and Lightning have library version conflict. 
@@ -44,6 +43,13 @@ source ~/venv-label-studio/bin/activate; pushd label-studio; which python; pytho
 ```bash
 export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *'
 source ~/venv-label-studio/bin/activate; cd label-studio; python label_studio/manage.py migrate; python label_studio/manage.py runserver; cd ..; deactivate
+```
+
+## Potential error messages running locally
+
+The `virtualenv` needs to be setup that has label-studio. 
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'label-studio'
 ```
 
 ## Potential error messages based on X-Frame-Options settings
