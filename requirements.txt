@@ -1,2 +1,3 @@
+virtualenv
 lightning
 https://github.com/robert-s-lee/lit_bashwork/archive/refs/tags/0.0.1.tar.gz

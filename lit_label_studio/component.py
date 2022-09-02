@@ -52,9 +52,12 @@ class LitLabelStudio(la.LightningFlow):
                 # label-studio/label_studio/core/settings/base.py
                 # label-studio/label_studio/core/middleware.py
                 # https://docs.djangoproject.com/en/4.0/ref/clickjacking/
-                # export LABEL_STUDIO_X_FRAME_OPTIONS=sameorgin # allowall, allow-from *, deny
+                # for local, we want
+                # export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *' # allowall, allow-from *, deny
+                # for cloud, we want
+                # export LABEL_STUDIO_X_FRAME_OPTIONS=sameorigin # allowall, allow-from *, deny
                 'USE_ENFORCE_CSRF_CHECKS':'false',
-                'LABEL_STUDIO_X_FRAME_OPTIONS':'sameorgin', 
+                'LABEL_STUDIO_X_FRAME_OPTIONS':os.getenv('LABEL_STUDIO_X_FRAME_OPTIONS','SAMEORIGIN'), 
                 'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED':'true', 
                 'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT':os.path.abspath(os.getcwd())
                 },

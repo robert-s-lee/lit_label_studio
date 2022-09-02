@@ -8,8 +8,7 @@ setup(
     description="label studio",
     author="Robert S Lee",
     author_email="sangkyulee@gmail.com",
-    # REPLACE WITH YOUR OWN GITHUB PROJECT LINK
-    url="https://github.com/PyTorchLightning/lightning-component-template",
+    url="https://github.com/robert-s-lee/lit_label_studio",
     install_requires=[],
     packages=find_packages(),
 )
