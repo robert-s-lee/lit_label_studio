@@ -55,9 +55,10 @@ class LitLabelStudio(la.LightningFlow):
                 # for local, we want
                 # export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *' # allowall, allow-from *, deny
                 # for cloud, we want
-                # export LABEL_STUDIO_X_FRAME_OPTIONS=sameorigin # allowall, allow-from *, deny
+                # export LABEL_STUDIO_X_FRAME_OPTIONS=SAMEORGIN
+                # NOTE: DO NOT USE SAMEORIGIN per docs in various website. browsers recognize SAMEORGIN
                 'USE_ENFORCE_CSRF_CHECKS':'false',
-                'LABEL_STUDIO_X_FRAME_OPTIONS':os.getenv('LABEL_STUDIO_X_FRAME_OPTIONS','SAMEORIGIN'), 
+                'LABEL_STUDIO_X_FRAME_OPTIONS':os.getenv('LABEL_STUDIO_X_FRAME_OPTIONS','SAMEORGIN'), 
                 'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED':'true', 
                 'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT':os.path.abspath(os.getcwd())
                 },

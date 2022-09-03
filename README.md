@@ -41,7 +41,7 @@ source ~/venv-label-studio/bin/activate; pushd label-studio; which python; pytho
 
 - test label-studio
 ```bash
-export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *'
+export LABEL_STUDIO_X_FRAME_OPTIONS='sameorgin'
 source ~/venv-label-studio/bin/activate; cd label-studio; python label_studio/manage.py migrate; python label_studio/manage.py runserver; cd ..; deactivate
 ```
 
@@ -111,10 +111,10 @@ app = la.LightningApp(LitApp())
 
 ## Run Locally and on the Cloud
 ```
-export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *'
+export LABEL_STUDIO_X_FRAME_OPTIONS='sameorgin'
 lightning run app app.py
 
-lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='SAMEORIGIN'
+lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='SAMEORGIN'
 ```
 ## Sign Up 
 ![Sign Up](./static/label-studio-sign-up.png)
