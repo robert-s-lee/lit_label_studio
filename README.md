@@ -60,10 +60,11 @@ FileNotFoundError: [Errno 2] No such file or directory: 'label-studio'
 ## Potential error messages based on X-Frame-Options settings
 
 On the Browser, right click -> Inspect, then look at console for these messages
+Click on the URL to display the iFrame
 
 - sameorigin
 
-Click on the URL to display the iFrame
+`sameorgin` should be replaced with `sameorgin`
 
 ```bash
 lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS=SAMEORIGIN'
@@ -74,7 +75,9 @@ Refused to display 'https://xlzzf-01gbz0k4ztj38ysezs6zwja8jm.litng-ai-03.litng.a
 ### Does not work in the Lighting Cloud
 
 - allow-from *
-  
+
+this works locally, but will not work in the cloud
+
 ```
 lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *'
 
@@ -83,6 +86,8 @@ Invalid 'X-Frame-Options' header encountered when loading 'https://xlzzf-01gbz0k
 
 - allowall
  
+this will not work
+
 ```
 lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allowall'
 
@@ -90,6 +95,9 @@ lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allowall'
 ```
 
 - allow-from 
+
+this will not work
+
 ```
 lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allow-from https://xlzzf-01gbz0k4ztj38ysezs6zwja8jm.litng-ai-03.litng.ai'
 
@@ -115,6 +123,8 @@ app = la.LightningApp(LitApp())
 ```
 
 ## Run Locally and on the Cloud
+Setting the `LABEL_STUDIO_X_FRAME_OPTIONS` is optional
+
 ```
 export LABEL_STUDIO_X_FRAME_OPTIONS='sameorgin'
 lightning run app app.py
