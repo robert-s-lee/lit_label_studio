@@ -24,7 +24,12 @@ python -m pip install  https://github.com/robert-s-lee/lit_label_studio/archive/
 
 - Option lightning install
 ```bash
-lightning install component https://github.com/robert-s-lee/lit_label_studio.git@main
+python -m lightning install component git+https://github.com/robert-s-lee/lit_label_studio.git@0.0.0
+```
+
+- verify 
+```
+python -m pip show lit_label_studio
 ```
 
 ## Setup lit_label_studio virtualenv
