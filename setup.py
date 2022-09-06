@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="lit_label_studio",
-    version="0.0.0",
+    version="0.0.1",
     description="label studio",
     author="Robert S Lee",
     author_email="sangkyulee@gmail.com",

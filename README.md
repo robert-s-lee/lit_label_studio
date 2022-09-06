@@ -40,15 +40,21 @@ Label Studio and Lightning have library version conflict.
 
 ```bash
 virtualenv ~/venv-label-studio 
-git clone https://github.com/robert-s-lee/label-studio; pushd label-studio; git checkout x-frame-options; popd
-source ~/venv-label-studio/bin/activate; pushd label-studio; which python; python -m pip install -e .; popd; deactivate
+source ~/venv-label-studio/bin/activate;  python -m pip install label-studio; deactivate
 ```
 
 - test label-studio
 ```bash
-export LABEL_STUDIO_X_FRAME_OPTIONS='sameorgin'
-source ~/venv-label-studio/bin/activate; cd label-studio; python label_studio/manage.py migrate; python label_studio/manage.py runserver; cd ..; deactivate
+# --internal-host
+# --port
+source ~/venv-label-studio/bin/activate; label-studio; deactivate
 ```
+
+- check 
+```
+curl -i localhost:8080 | grep -i X-Frame-Options
+```
+
 
 ## Potential error messages running locally
 
@@ -57,52 +63,6 @@ The `virtualenv` needs to be setup that has label-studio.
 FileNotFoundError: [Errno 2] No such file or directory: 'label-studio'
 ```
 
-## Potential error messages based on X-Frame-Options settings
-
-On the Browser, right click -> Inspect, then look at console for these messages
-Click on the URL to display the iFrame
-
-- sameorigin
-
-`sameorgin` should be replaced with `sameorgin`
-
-```bash
-lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS=SAMEORIGIN'
-
-Refused to display 'https://xlzzf-01gbz0k4ztj38ysezs6zwja8jm.litng-ai-03.litng.ai/' in a frame because it set 'X-Frame-Options' to 'sameorigin'.
-```
-
-### Does not work in the Lighting Cloud
-
-- allow-from *
-
-this works locally, but will not work in the cloud
-
-```
-lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *'
-
-Invalid 'X-Frame-Options' header encountered when loading 'https://xlzzf-01gbz0k4ztj38ysezs6zwja8jm.litng-ai-03.litng.ai/': 'ALLOW-FROM *' is not a recognized directive. The header will be ignored.
-```
-
-- allowall
- 
-this will not work
-
-```
-lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allowall'
-
-'allowall' does not display the login
-```
-
-- allow-from 
-
-this will not work
-
-```
-lightning run app app.py --cloud --env LABEL_STUDIO_X_FRAME_OPTIONS='allow-from https://xlzzf-01gbz0k4ztj38ysezs6zwja8jm.litng-ai-03.litng.ai'
-
-Invalid 'X-Frame-Options' header encountered when loading 'https://gytcu-01gbz7p6j2rb2q8p7sdgcvwrxt.litng-ai-03.litng.ai/': 'ALLOW-FROM HTTPS://XLZZF-01GBZ0K4ZTJ38YSEZS6ZWJA8JM.LITNG-AI-03.LITNG.AI' is not a recognized directive. The header will be ignored.
-```
 
 Once the app is installed, use it in an app:
 
@@ -145,3 +105,31 @@ This behavior on controlled by the component.
 ```
 
 ![Add Local Storage](./static/label_studio_add_source_storage.png)
+
+# remove x-frame-options
+
+- check the header
+  
+```
+curl -I http://localhost:8080
+```
+
+## nginx
+
+nginx  -c $(pwd)/nginx-8080.conf 
+
+
+## caddy
+```
+cat Caddyfile <<EOF
+:8081
+reverse_proxy 127.0.0.1:8080 {
+    header_down X-Frame-Options "sameorgin"
+}
+EOF
+```
+caddy run &
+
+
+## nginx
+

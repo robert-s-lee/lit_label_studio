@@ -2,11 +2,12 @@ import lightning_app as la
 from lightning.app.storage.drive import Drive
 from lit_bashwork import LitBashWork
 
+from pathlib import Path
+from string import Template
+
 import os
 from typing import Optional, Union, List
 
-# label studio source code
-label_studio_dir    = "label-studio"
 # dir where label studio python venv will be setup
 label_studio_venv        = "venv-label-studio"
 # Lighting App Drive name to exchange dirs and files
@@ -15,12 +16,10 @@ label_studio_drive_name  = "lit://label-studio"
 class LabelStudioBuildConfig(la.BuildConfig):
   def build_commands(self) -> List[str]:
     return [
-      f"virtualenv ~/{label_studio_venv}",
-      "git clone https://github.com/robert-s-lee/label-studio",
-      "cd label-studio; git checkout x-frame-options; cd ..",
-      f". ~/{label_studio_venv}/bin/activate; cd label-studio; which python; python -m pip install -e .;deactivate",
-      # TODO: after PR is merged,
-      # f". ~/{label_studio_venv}/bin/activate; which python; python -m pip install label-studio",
+        "sudo apt-get update",
+        "sudo apt-get install nginx",
+        f"virtualenv ~/{label_studio_venv}",
+        f". ~/{label_studio_venv}/bin/activate; which python; python -m pip install label-studio; deactivate",
     ]
 
 class LitLabelStudio(la.LightningFlow):
@@ -33,41 +32,36 @@ class LitLabelStudio(la.LightningFlow):
         self.drive = Drive(drive_name)    
         self.count = 0
 
-
     def start_label_studio(self):
-        """run label studio migrate, then runserver"""
-        # Install for local development
-        # https://github.com/heartexlabs/label-studio#install-for-local-development
-        self.label_studio.run(
-          f"python label_studio/manage.py migrate", 
-          venv_name=label_studio_venv,
-          cwd=label_studio_dir)
+        # prepare nginx conf with host and port numbers filled in
+        conf_file = os.path.join(Path(__file__).parent.absolute(), "nginx-8080.conf")
+        new_conf_file = os.path.join(Path(__file__).parent.absolute(), "nginx-8080-new.conf")
+        new_conf = open(new_conf_file, "w")
+        for l in open(conf_file).readlines():
+            new_conf.write(Template(l).substitute(host=self.label_studio.host, port=self.label_studio.port))
 
+        # run reverse proxy on external port and remove x-frame-options
         self.label_studio.run(
-            "python label_studio/manage.py runserver $host:$port", 
+            f"nginx -c {new_conf_file}",
+            wait_for_exit=True,    
+        )
+
+        # start label-studio on the default port 8080
+        self.label_studio.run(
+            "label-studio --internal-host $host", 
             venv_name=label_studio_venv,
             wait_for_exit=False,    
             env={
-                # label-studio/label_studio/core/settings/label_studio.py
-                # label-studio/label_studio/core/settings/base.py
-                # label-studio/label_studio/core/middleware.py
-                # https://docs.djangoproject.com/en/4.0/ref/clickjacking/
-                # for local, we want
-                # export LABEL_STUDIO_X_FRAME_OPTIONS='allow-from *' # allowall, allow-from *, deny
-                # for cloud, we want
-                # export LABEL_STUDIO_X_FRAME_OPTIONS=SAMEORGIN
-                # NOTE: DO NOT USE SAMEORIGIN per docs in various website. browsers recognize SAMEORGIN
                 'USE_ENFORCE_CSRF_CHECKS':'false',
-                'LABEL_STUDIO_X_FRAME_OPTIONS':os.getenv('LABEL_STUDIO_X_FRAME_OPTIONS','SAMEORGIN'), 
                 'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED':'true', 
                 'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT':os.path.abspath(os.getcwd())
                 },
-            cwd=label_studio_dir)
+            )
+
         self.count += 1
 
     def run(self):
         if self.count == 0:
             self.start_label_studio()
 
-    def configure_layout(self):
-        return({"name": "Annotate", "content": self.label_studio})
+
