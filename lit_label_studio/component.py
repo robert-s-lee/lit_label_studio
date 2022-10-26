@@ -33,12 +33,14 @@ class LitLabelStudio(la.LightningFlow):
         self.count = 0
 
     def start_label_studio(self):
-        # prepare nginx conf with host and port numbers filled in
-        conf_file = os.path.join(Path(__file__).parent.absolute(), "nginx-8080.conf")
-        new_conf_file = os.path.join(Path(__file__).parent.absolute(), "nginx-8080-new.conf")
+        # prepare nginx conf with host and port filled in
+        conf_dir = Path(__file__).parent.absolute()
+        conf_file = os.path.join(conf_dir, "nginx-8080.conf")
+        new_conf_file = os.path.join(conf_dir, "nginx-8080-new.conf")
         new_conf = open(new_conf_file, "w")
         for l in open(conf_file).readlines():
             new_conf.write(Template(l).substitute(host=self.label_studio.host, port=self.label_studio.port))
+        new_conf.close()
 
         # run reverse proxy on external port and remove x-frame-options
         self.label_studio.run(

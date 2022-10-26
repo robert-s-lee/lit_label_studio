@@ -32,6 +32,12 @@ python -m lightning install component git+https://github.com/robert-s-lee/lit_la
 python -m pip show lit_label_studio
 ```
 
+## on osx
+
+```bash
+brew install nginx
+```
+
 ## Setup lit_label_studio virtualenv
   
 NOTE: Use `Conda` for Lightning and use `venv` for Label Studio. 
