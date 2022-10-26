@@ -11,4 +11,7 @@ class LitApp(la.LightningFlow):
     def run(self):
         self.lit_label_studio.run()
 
+    def configure_layout(self):
+        return({"name": "Annotate", "content": self.lit_label_studio.label_studio})
+
 app = la.LightningApp(LitApp())

@@ -157,3 +157,4 @@ train_script.py
 *return_values*
 scratch
 storage
+lit_label_studio/nginx-8080-new.conf
