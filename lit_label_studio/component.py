@@ -18,6 +18,10 @@ class LabelStudioBuildConfig(la.BuildConfig):
     return [
         "sudo apt-get update",
         "sudo apt-get install nginx",
+        "sudo touch /run/nginx.pid",
+        "sudo chown -R `whoami` /etc/nginx/ /var/log/nginx/",
+        "sudo chown -R `whoami` /var/lib/nginx/",
+        "sudo chown `whoami` /run/nginx.pid",
         f"virtualenv ~/{label_studio_venv}",
         f". ~/{label_studio_venv}/bin/activate; which python; python -m pip install label-studio; deactivate",
     ]
@@ -30,17 +34,19 @@ class LitLabelStudio(la.LightningFlow):
             cloud_build_config=LabelStudioBuildConfig(),
             )
         self.drive = Drive(drive_name)    
-        self.count = 0
 
-    def start_label_studio(self):
         # prepare nginx conf with host and port filled in
         conf_dir = Path(__file__).parent.absolute()
-        conf_file = os.path.join(conf_dir, "nginx-8080.conf")
-        new_conf_file = os.path.join(conf_dir, "nginx-8080-new.conf")
-        new_conf = open(new_conf_file, "w")
-        for l in open(conf_file).readlines():
-            new_conf.write(Template(l).substitute(host=self.label_studio.host, port=self.label_studio.port))
-        new_conf.close()
+        self.conf_file = os.path.join(conf_dir, "nginx-8080.conf")
+        self.new_conf_file = os.path.join(conf_dir, "nginx-8080-new.conf")
+
+    def start_label_studio(self):
+
+        # create config file 
+        self.label_studio.run(
+            f"sed -e s/\$port/{self.label_studio.port}/g -e s/\$host/{self.label_studio.host}/ {self.conf_file} > {self.new_conf_file}",
+            wait_for_exit=True,    
+        )
 
         # run reverse proxy on external port and remove x-frame-options
         self.label_studio.run(
@@ -60,10 +66,7 @@ class LitLabelStudio(la.LightningFlow):
                 },
             )
 
-        self.count += 1
-
     def run(self):
-        if self.count == 0:
-            self.start_label_studio()
+        self.start_label_studio()
 
 
