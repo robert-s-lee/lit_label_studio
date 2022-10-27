@@ -12,6 +12,9 @@ from typing import Optional, Union, List
 label_studio_venv        = "venv-label-studio"
 # Lighting App Drive name to exchange dirs and files
 label_studio_drive_name  = "lit://label-studio"
+# nginx conf template to remove x-frame-options
+conf_file = "nginx-8080.conf"
+new_conf_file = "nginx-new-8080.conf"
 
 class LabelStudioBuildConfig(la.BuildConfig):
   def build_commands(self) -> List[str]:
@@ -34,23 +37,19 @@ class LitLabelStudio(la.LightningFlow):
             cloud_build_config=LabelStudioBuildConfig(),
             )
         self.drive = Drive(drive_name)    
+        self.count = 0
 
-        # prepare nginx conf with host and port filled in
-        conf_dir = Path(__file__).parent.absolute()
-        self.conf_file = os.path.join(conf_dir, "nginx-8080.conf")
-        self.new_conf_file = os.path.join(conf_dir, "nginx-8080-new.conf")
-
-    def start_label_studio(self):
+    def start_label_studio(self):        
 
         # create config file 
         self.label_studio.run(
-            f"sed -e s/\$port/{self.label_studio.port}/g -e s/\$host/{self.label_studio.host}/ {self.conf_file} > {self.new_conf_file}",
+            f"sed -e s/__port__/{self.label_studio.port}/g -e s/__host__/{self.label_studio.host}/ nginx-8080.conf > ~/{new_conf_file}",
             wait_for_exit=True,    
         )
 
         # run reverse proxy on external port and remove x-frame-options
         self.label_studio.run(
-            f"nginx -c {new_conf_file}",
+            f"nginx -c ~/{new_conf_file}",
             wait_for_exit=True,    
         )
 
@@ -66,7 +65,10 @@ class LitLabelStudio(la.LightningFlow):
                 },
             )
 
+        self.count += 1
+
     def run(self):
-        self.start_label_studio()
+        if self.count == 0:
+            self.start_label_studio()
 
 
