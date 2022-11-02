@@ -1,15 +1,16 @@
-import lightning_app as la
+import lightning.app as la
 from lightning.app.storage.drive import Drive
 from lit_bashwork import LitBashWork
 
+
 from pathlib import Path
 from string import Template
-
+import time
 import os
 from typing import Optional, Union, List
 
 # dir where label studio python venv will be setup
-label_studio_venv        = "venv-label-studio"
+label_studio_venv  = "venv-label-studio"
 # Lighting App Drive name to exchange dirs and files
 label_studio_drive_name  = "lit://label-studio"
 # nginx conf template to remove x-frame-options
@@ -18,6 +19,7 @@ new_conf_file = "nginx-new-8080.conf"
 
 class LabelStudioBuildConfig(la.BuildConfig):
   def build_commands(self) -> List[str]:
+    # added an install for label-studio-sdk to automatically launch the label studio server.
     return [
         "sudo apt-get update",
         "sudo apt-get install nginx",
@@ -26,7 +28,7 @@ class LabelStudioBuildConfig(la.BuildConfig):
         "sudo chown -R `whoami` /var/lib/nginx/",
         "sudo chown `whoami` /run/nginx.pid",
         f"virtualenv ~/{label_studio_venv}",
-        f". ~/{label_studio_venv}/bin/activate; which python; python -m pip install label-studio; deactivate",
+        f". ~/{label_studio_venv}/bin/activate; which python; python -m pip install label-studio label-studio-sdk; deactivate",
     ]
 
 class LitLabelStudio(la.LightningFlow):
@@ -38,6 +40,10 @@ class LitLabelStudio(la.LightningFlow):
             )
         self.drive = Drive(drive_name)    
         self.count = 0
+
+        self.username = "matt@columbia.edu"
+        self.password = "whiteway123"
+        self.user_token = "whitenoise1" #'4949affb1e0883c20552b123a7aded4e6c76760b'
 
     def start_label_studio(self):        
 
@@ -54,21 +60,51 @@ class LitLabelStudio(la.LightningFlow):
         )
 
         # start label-studio on the default port 8080
+        # added start, make sure it doesn't break
+        # TODO: we need to take in username, password from users. add tokens ourselves so that we can sync data.
         self.label_studio.run(
-            "label-studio --internal-host $host", 
+            f"label-studio --internal-host $host", # --username {self.username} --password {self.password} --user-token {self.user_token}
             venv_name=label_studio_venv,
             wait_for_exit=False,    
             env={
+                'LABEL_STUDIO_USERNAME': self.username,
+                'LABEL_STUDIO_PASSWORD': self.password,
+                'LABEL_STUDIO_USER_TOKEN': self.user_token,
                 'USE_ENFORCE_CSRF_CHECKS':'false',
-                'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED':'true', 
-                'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT':os.path.abspath(os.getcwd())
+                'LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED': 'true', 
+                'LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT': os.path.abspath(os.getcwd()),
+                'LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK': 'true',
                 },
             )
 
         self.count += 1
+    
+    def build_labeling_task(self):
+        # create labeling task
+        # TODO: add args
+        script_path = os.path.join(os.getcwd(), "lit_label_studio", "build_labeling_task.py")
+        assert os.path.exists(script_path), f"script path does not exist: {script_path}"
+        label_studio_url = 'http://localhost:8080' # was 8080
+        data_dir = os.path.join(os.getcwd(), "images_to_label")
+        # api_key = '4949affb1e0883c20552b123a7aded4e6c76760b' # personal, take from secrets
+        project_name = "test_locally_with_args"
+        # TODO: label_config as a file 
+        build_command = f"python {script_path} --label_studio_url {label_studio_url} --data_dir {data_dir} --api_key {self.user_token} --project_name {project_name}"
+        
+        self.label_studio.run(
+            build_command,
+            venv_name=label_studio_venv,
+            wait_for_exit=True,    
+        )
 
     def run(self):
         if self.count == 0:
+            # start
             self.start_label_studio()
+            time.sleep(7) # label studio hasn't finished starting. and one has to login.
+            # print the ip
+            print("label studio work ip: ", self.label_studio.internal_ip)
+            # connect and build labeling task
+            self.build_labeling_task()
 
 

@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "lightning",
         "virtualenv",
-        "lit_bashwork @ https://github.com/robert-s-lee/lit_bashwork/archive/refs/tags/0.0.1.tar.gz",
+        # "lit_bashwork @ https://github.com/robert-s-lee/lit_bashwork/archive/refs/tags/0.0.1.tar.gz",
     ],
     packages=find_packages(),
     include_package_data=True,

@@ -1,6 +1,6 @@
 from lit_label_studio import LitLabelStudio
 
-import lightning_app as la
+import lightning.app as la
 
 
 class LitApp(la.LightningFlow):
