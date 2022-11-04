@@ -1,3 +1,4 @@
+from aiohttp import TraceRequestChunkSentParams
 import lightning.app as la
 from lightning.app.storage.drive import Drive
 from lit_bashwork import LitBashWork
@@ -44,6 +45,8 @@ class LitLabelStudio(la.LightningFlow):
         self.username = "matt@columbia.edu"
         self.password = "whiteway123"
         self.user_token = "whitenoise1" #'4949affb1e0883c20552b123a7aded4e6c76760b'
+        self.label_studio_started = False
+        self.label_studio_project_created = False
 
     def start_label_studio(self):        
 
@@ -63,7 +66,7 @@ class LitLabelStudio(la.LightningFlow):
         # added start, make sure it doesn't break
         # TODO: we need to take in username, password from users. add tokens ourselves so that we can sync data.
         self.label_studio.run(
-            f"label-studio --internal-host $host", # --username {self.username} --password {self.password} --user-token {self.user_token}
+            f"label-studio start --no-browser --internal-host $host", # --username {self.username} --password {self.password} --user-token {self.user_token}
             venv_name=label_studio_venv,
             wait_for_exit=False,    
             env={
@@ -96,15 +99,40 @@ class LitLabelStudio(la.LightningFlow):
             venv_name=label_studio_venv,
             wait_for_exit=True,    
         )
+        # TODO: check for error in previous command, this is not tolerant to errors
+        self.label_studio_project_created = True
+    
+    def check_label_studio_running(self, time = None):
+        # added a dummy time input so that this is a unique call
+        # check if label studio is running
+        self.label_studio.run(
+            f"echo {str(time)} | ps -ef | grep label-studio",
+            wait_for_exit=True,    
+        )
+        cmd = "ps -ef | grep label-studio"
+        
+        if (self.label_studio.last_args() == cmd):
+            # count lines
+            counter = 0
+            for x in self.my_work.stdout:
+                counter += 1
+            if counter > 1: # process is running, we'll have more than one line due to multiprocessing
+                self.label_studio_started = True
 
     def run(self):
         if self.count == 0:
             # start
             self.start_label_studio()
-            time.sleep(7) # label studio hasn't finished starting. and one has to login.
-            # print the ip
-            print("label studio work ip: ", self.label_studio.internal_ip)
-            # connect and build labeling task
+        # connect and build labeling task
+        if self.count == 1:
+            time.sleep(45) # wait for label studio to start, eliminating this prevents project creation.
             self.build_labeling_task()
+        # if self.count == 1 and self.label_studio_started == False:
+        #     self.check_label_studio_running(time = time.time())
+        #     # time.sleep(10) # wait for label studio to start, eliminating this prevents project creation.
+        # if self.count == 1 and self.label_studio_started == True:
+        #     self.build_labeling_task()
+        #     # # someone has to connect to the label studio server
+        #     # self.build_labeling_task()
 
 
