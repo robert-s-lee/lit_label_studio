@@ -90,9 +90,11 @@ class LitLabelStudio(la.LightningFlow):
         label_studio_url = 'http://localhost:8080' # was 8080
         data_dir = os.path.join(os.getcwd(), "images_to_label")
         # api_key = '4949affb1e0883c20552b123a7aded4e6c76760b' # personal, take from secrets
-        project_name = "test_locally_with_args"
+        project_name = "test_locally_with_args" # TODO: project name as an arg
         # TODO: label_config as a file 
-        build_command = f"python {script_path} --label_studio_url {label_studio_url} --data_dir {data_dir} --api_key {self.user_token} --project_name {project_name}"
+        label_config = os.path.join(os.getcwd(), "lit_label_studio", "label_config.txt")
+        assert os.path.exists(label_config), f"label config does not exist: {label_config}"
+        build_command = f"python {script_path} --label_studio_url {label_studio_url} --data_dir {data_dir} --api_key {self.user_token} --project_name {project_name} --label_config {label_config}"
         
         self.label_studio.run(
             build_command,
@@ -121,12 +123,21 @@ class LitLabelStudio(la.LightningFlow):
 
     def run(self):
         if self.count == 0:
-            # start
             self.start_label_studio()
-        # connect and build labeling task
-        if self.count == 1:
-            time.sleep(45) # wait for label studio to start, eliminating this prevents project creation.
-            self.build_labeling_task()
+        # time.sleep(10)
+        self.build_labeling_task()
+        
+        # ### previous version
+        # if self.count == 0:
+        #     # start
+        #     self.start_label_studio()
+        # # connect and build labeling task
+        # if self.count == 1:
+        #     print("count is 1")
+        #     # sleep should be 45 on the cloud
+        #     time.sleep(1) # wait for label studio to start, eliminating this prevents project creation.
+        #     self.build_labeling_task()
+
         # if self.count == 1 and self.label_studio_started == False:
         #     self.check_label_studio_running(time = time.time())
         #     # time.sleep(10) # wait for label studio to start, eliminating this prevents project creation.
