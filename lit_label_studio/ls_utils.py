@@ -57,10 +57,11 @@ def create_data_source(label_studio_project, json):
 
 class LabelStudioJSONProcessor:
     """ methods to process the .json output from labelstudio """
-    def __init__(self, label_studio_json_export: List[dict], data_dir: str, relative_image_dir: str):
+    def __init__(self, label_studio_json_export: List[dict], data_dir: str, relative_image_dir: str, keypoint_names: List[str]):
         self.label_studio_json_export = label_studio_json_export
         self.data_dir = data_dir
         self.relative_image_dir = relative_image_dir
+        self.keypoint_names = keypoint_names
     
     @property
     def absolute_image_dir(self) -> str:
@@ -83,8 +84,8 @@ class LabelStudioJSONProcessor:
     
     def get_keypoint_names(self) -> List[str]:
         """ get the keypoint names from the json file, assuming all images have the same keypoint names, we only need to look at the first image"""
-        keypoint_names = [keypoint["value"]['keypointlabels'][0] for keypoint in self.label_studio_json_export[0]["annotations"][0]["result"]]
-        return keypoint_names
+        # keypoint_names = [keypoint["value"]['keypointlabels'][0] for keypoint in self.label_studio_json_export[0]["annotations"][0]["result"]]
+        return self.keypoint_names
     
     @staticmethod
     def make_dlc_pandas_index(model_name: str, keypoint_names: List[str]) -> pd.MultiIndex:
@@ -137,7 +138,17 @@ class LabelStudioJSONProcessor:
                     continue
                 x, y = pixel_coordinates
                 keypoint_name = result['value']['keypointlabels'][0]
-                
+                # note, if we have multiple annotations of the same keypoint and image, the last one overrides the previous ones in the dataframe.
                 df.loc[relative_image_path, ("lightning_tracker", keypoint_name, "x")] = x
                 df.loc[relative_image_path, ("lightning_tracker", keypoint_name, "y")] = y
         return df
+    
+# a function that gets relative image paths from a base dir
+def get_rel_image_paths(basedir: str) -> List[str]:
+    img_list = []
+    for root, dirs, files in os.walk(basedir):
+        for file in files:
+            if file.endswith(".png"):
+                abspath = os.path.join(root, file)
+                img_list.append(os.path.relpath(abspath, start=basedir))
+    return img_list

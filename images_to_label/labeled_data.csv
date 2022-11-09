@@ -1,5 +1,4 @@
 scorer,lightning_tracker,lightning_tracker,lightning_tracker,lightning_tracker,lightning_tracker,lightning_tracker
-bodyparts,Dan,Dan,Matt,Matt,Bros,Bros
+bodyparts,Bros,Bros,Dan,Dan,Matt,Matt
 coords,x,y,x,y,x,y
-images_to_label/img00.png,300.46153846153845,19.399317406143346,203.53846153846155,304.8464163822526,,
-images_to_label/img02.png,294.92307692307696,20.784982935153586,253.3846153846154,292.3754266211604,65.07692307692308,310.38907849829354
+images_to_label/sess1/img00.png,137.2186046511628,65.36507936507937,230.2325581395349,75.4920634920635,175.89767441860465,105.87301587301586

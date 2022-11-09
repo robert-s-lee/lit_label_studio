@@ -42,7 +42,7 @@ class LitLabelStudio(la.LightningFlow):
         self.drive = Drive(drive_name)    
         self.count = 0
         self.label_studio_url = 'http://localhost:8080'
-        self.data_dir = os.path.join(os.getcwd(), "images_to_label")
+        self.data_dir = os.path.join(os.getcwd(), "images_to_label") # could have subdirs
         self.username = "matt@columbia.edu"
         self.password = "whiteway123"
         self.user_token = "whitenoise1" #'4949affb1e0883c20552b123a7aded4e6c76760b'

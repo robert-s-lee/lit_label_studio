@@ -1,6 +1,6 @@
 import os
 import argparse
-from ls_utils import connect_to_label_studio, start_project, create_data_source
+from ls_utils import connect_to_label_studio, start_project, create_data_source, get_rel_image_paths
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--label_studio_url', type=str)
@@ -34,21 +34,16 @@ json = {
 # print project id
 print("Project ID: %s" % label_studio_project.id)
 
-# list all projects
-print("All projects:")
-projects = label_studio_client.get_projects()
-for project in projects:
-    print(project.id, project.title)
-
 print("Creating LabelStudio data source...")
 create_data_source(label_studio_project=label_studio_project, json=json)
 print("LabelStudio data source created.")
 
 print("Importing tasks...")
-img_list = []
+rel_images = get_rel_image_paths(args.data_dir)
 label_studio_prefix = f"data/local-files?d={basedir}/"
+# TODO: decide what exactly the relative path is 
 # loop over the png files in the directory and add them as dicts to the lisr, using labelstudio path format
-image_list = [{"img": label_studio_prefix + f} for f in os.listdir(args.data_dir) if f.endswith('.png')]
+image_list = [{"img": os.path.join(label_studio_prefix, rel_img)} for rel_img in rel_images] #[{"img": label_studio_prefix + f} for f in os.listdir(args.data_dir) if f.endswith('.png')]
 label_studio_project.import_tasks(image_list)
 print("%i Tasks imported." % len(image_list))
 
