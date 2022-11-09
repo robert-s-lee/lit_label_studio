@@ -4,88 +4,93 @@ from label_studio_sdk import Client
 import argparse
 import time
 
+MAX_CONNECT_ATTEMPTS = 30
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--label_studio_url', type=str)
 parser.add_argument('--data_dir', type=str)
 parser.add_argument('--api_key', type=str)
 parser.add_argument('--project_name', type=str)
 parser.add_argument('--label_config', type=str)
-
-# TODO: remove capital letters
 args = parser.parse_args()
+basedir = os.path.basename(args.data_dir)
+
+
+# define a decorator that retries to run a function MAX_CONNECT_ATTEMPTS times
+def retry(func):
+    """Retry calling the decorated function MAX_CONNECT_ATTEMPTS times"""
+    def wrapper(*args, **kwargs):
+        attempts = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except:
+                print("Could not execute {}, retrying in one second...".format(func.__name__))
+                attempts += 1
+                time.sleep(1)
+                if attempts > MAX_CONNECT_ATTEMPTS:
+                    raise Exception("Could not execute {} after {} attempts".format(func.__name__,MAX_CONNECT_ATTEMPTS))
+    return wrapper
 
 # read label config text file into str
 with open(args.label_config, 'r') as f:
     label_config = f.read()
 
-MAX_CONNECT_ATTEMPTS = 30
-# # Define the URL where Label Studio is accessible and the API key for your user account
-# LABEL_STUDIO_URL = 'http://localhost:8080' # that's gonna be different on the cloud and via lightning. in this script will have to use the internal ip property so that another work accesses it. 
-# # LABEL_STUDIO_URL = self.internal_ip
-# # print("internal ip: ", self.internal_ip)
-# PATH = "/Users/danbiderman/Dropbox/Columbia/1.Dan/lit_label_studio/images_to_label" # TODO: generalize
-# API_KEY = '4949affb1e0883c20552b123a7aded4e6c76760b' # look at sectrets in lightning docs lightning --cloud has secrets key.
-# when someone launches lightning, we create for them API key for AWS, with a bucket-name that they write into. when a user starts, they have a video locally. we need them to give us the video, and we can send it to a designated bucket.
-basedir = os.path.basename(args.data_dir)
-
 # Import the SDK and the client module
+# use the retry decorator to retry the connection to label studio
 
-connected = False
-attempts = 0
-while not connected:
-    try:
-        label_studio_client = Client(url=args.label_studio_url, api_key=args.api_key)
-        connected = True
-        print("We are connected to LabelStudio URL: {} ".format(args.label_studio_url))
-    except:
-        print("Not connected to LabelStudio URL, retrying in one second...")
-        attempts += 1
-        time.sleep(1)
-        if attempts > MAX_CONNECT_ATTEMPTS:
-            raise Exception("Could not connect to LabelStudio URL: {} after {} attempts".format(args.label_studio_url, MAX_CONNECT_ATTEMPTS))
+@retry
+def connect_to_label_studio():
+    # Connect to Label Studio
+    print("Connecting to LabelStudio...")
+    return Client(url=args.label_studio_url, api_key=args.api_key)
+
+label_studio_client = connect_to_label_studio()
+
 
 # connected = False
-# while connected == False:
-#     # Connect to the Label Studio API and check the connection
-#     label_studio_client = Client(url=LABEL_STUDIO_URL, api_key=API_KEY)
-#     connection = label_studio_client.check_connection()
-#     print("Check connection:", label_studio_client.check_connection()) # AFAIK label studio has to be running for this to work
-#     if connection["status"] == "UP":
+# attempts = 0
+# while not connected:
+#     try:
+#         label_studio_client = Client(url=args.label_studio_url, api_key=args.api_key)
 #         connected = True
+#         print("We are connected to LabelStudio URL: {} ".format(args.label_studio_url))
+#     except:
+#         print("Could not connect to LabelStudio URL, retrying in one second...")
+#         attempts += 1
+#         time.sleep(1)
+#         if attempts > MAX_CONNECT_ATTEMPTS:
+#             raise Exception("Could not connect to LabelStudio URL: {} after {} attempts".format(args.label_studio_url, MAX_CONNECT_ATTEMPTS))
 
-# if label_studio_client.check_connection()["status"] == "UP":
-#     print("we are up")
-# else:
-#     print("we are not connected")
-# string_that_works = '''
-#         <!--Basic keypoint image labeling configuration for multiple regions-->
-#             <View>
-#             <KeyPointLabels name="kp-1" toName="img-1" strokeWidth="3">
-#                 <Label value="Bros" background="red" />
-#                 <Label value="Dan" background="blue" />
-#                 <Label value="Matt" background="green" />
-#             </KeyPointLabels>
-#             <Image name="img-1" value="$img" />
-#             </View>
-#             '''
 #### start project
-print("Creating LabelStudio project...")
-# try to create project
-project_created = False
-attempts = 0
-while not project_created:
-    try:
-        label_studio_project = label_studio_client.start_project(
-            title=args.project_name,
-            label_config=label_config)
-        project_created = True
-        print("LabelStudio Project created!")
-    except:
-        print("Project not created, retrying in one second...")
-        attempts += 1
-        time.sleep(1)
-        if attempts > MAX_CONNECT_ATTEMPTS:
-            raise Exception("Could not create LabelStudio project after {} attempts".format(MAX_CONNECT_ATTEMPTS))
+# use the retry decorator to retry MAX_CONNECT_ATTEMPTS times
+@retry
+def start_project():
+    print("Creating LabelStudio project...")
+    project = label_studio_client.start_project(
+        title=args.project_name,
+        label_config=label_config)
+    return project
+
+label_studio_project = start_project()
+
+# DB: commenting the bellow to test retry decorator
+# # try to create project
+# project_created = False
+# attempts = 0
+# while not project_created:
+#     try:
+#         label_studio_project = label_studio_client.start_project(
+#             title=args.project_name,
+#             label_config=label_config)
+#         project_created = True
+#         print("LabelStudio Project created!")
+#     except:
+#         print("Project not created, retrying in one second...")
+#         attempts += 1
+#         time.sleep(1)
+#         if attempts > MAX_CONNECT_ATTEMPTS:
+#             raise Exception("Could not create LabelStudio project after {} attempts".format(MAX_CONNECT_ATTEMPTS))
 
 json = {
 "path": args.data_dir,
@@ -98,9 +103,18 @@ json = {
 "project": label_studio_project.id
 }
 
-print("Creating LabelStudio data source...")
-label_studio_project.make_request('POST', '/api/storages/localfiles', json=json)
+# use the retry decorator to retry MAX_CONNECT_ATTEMPTS times
+@retry
+def create_data_source():
+    print("Creating LabelStudio data source...")
+    label_studio_project.make_request('POST', '/api/storages/localfiles', json=json)
+
+create_data_source()
 print("LabelStudio data source created.")
+
+# print("Creating LabelStudio data source...")
+# label_studio_project.make_request('POST', '/api/storages/localfiles', json=json)
+# print("LabelStudio data source created.")
 
 print("Importing tasks...")
 img_list = []
