@@ -159,6 +159,7 @@ class LitBashWork(la.LightningWork):
     inputs=[], outputs=[], 
     run_after_run=[],
     timeout=0,
+    timer=0, # added for uniqueness and caching
     **kwargs):
 
     print(f"args={args} \n venv_name={venv_name} \n save_stdout={save_stdout} \n wait_for_exit={wait_for_exit} \n input_output_only={input_output_only} \n kill_pid={kill_pid} \n inputs={inputs} \n outputs={outputs} \n run_after_run={run_after_run} timeout={timeout} kwargs={kwargs}")

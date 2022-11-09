@@ -41,12 +41,12 @@ class LitLabelStudio(la.LightningFlow):
             )
         self.drive = Drive(drive_name)    
         self.count = 0
-
+        self.label_studio_url = 'http://localhost:8080'
+        self.data_dir = os.path.join(os.getcwd(), "images_to_label")
         self.username = "matt@columbia.edu"
         self.password = "whiteway123"
         self.user_token = "whitenoise1" #'4949affb1e0883c20552b123a7aded4e6c76760b'
-        self.label_studio_started = False
-        self.label_studio_project_created = False
+
 
     def start_label_studio(self):        
 
@@ -66,7 +66,7 @@ class LitLabelStudio(la.LightningFlow):
         # added start, make sure it doesn't break
         # TODO: we need to take in username, password from users. add tokens ourselves so that we can sync data.
         self.label_studio.run(
-            f"label-studio start --no-browser --internal-host $host", # --username {self.username} --password {self.password} --user-token {self.user_token}
+            f"label-studio start --no-browser --internal-host $host", 
             venv_name=label_studio_venv,
             wait_for_exit=False,    
             env={
@@ -87,63 +87,32 @@ class LitLabelStudio(la.LightningFlow):
         # TODO: add args
         script_path = os.path.join(os.getcwd(), "lit_label_studio", "build_labeling_task.py")
         assert os.path.exists(script_path), f"script path does not exist: {script_path}"
-        label_studio_url = 'http://localhost:8080' # was 8080
-        data_dir = os.path.join(os.getcwd(), "images_to_label")
-        # api_key = '4949affb1e0883c20552b123a7aded4e6c76760b' # personal, take from secrets
         project_name = "test_locally_with_args" # TODO: project name as an arg
         # TODO: label_config as a file 
         label_config = os.path.join(os.getcwd(), "lit_label_studio", "label_config.txt")
         assert os.path.exists(label_config), f"label config does not exist: {label_config}"
-        build_command = f"python {script_path} --label_studio_url {label_studio_url} --data_dir {data_dir} --api_key {self.user_token} --project_name {project_name} --label_config {label_config}"
+        build_command = f"python {script_path} --label_studio_url {self.label_studio_url} --data_dir {self.data_dir} --api_key {self.user_token} --project_name {project_name} --label_config {label_config}"
         
         self.label_studio.run(
             build_command,
             venv_name=label_studio_venv,
             wait_for_exit=True,    
         )
-        # TODO: check for error in previous command, this is not tolerant to errors
-        self.label_studio_project_created = True
     
-    def check_label_studio_running(self, time = None):
-        # added a dummy time input so that this is a unique call
-        # check if label studio is running
-        self.label_studio.run(
-            f"echo {str(time)} | ps -ef | grep label-studio",
-            wait_for_exit=True,    
-        )
-        cmd = "ps -ef | grep label-studio"
-        
-        if (self.label_studio.last_args() == cmd):
-            # count lines
-            counter = 0
-            for x in self.my_work.stdout:
-                counter += 1
-            if counter > 1: # process is running, we'll have more than one line due to multiprocessing
-                self.label_studio_started = True
+    def check_labeling_task_and_export(self, time):
+        # check labeling task
+        script_path = os.path.join(os.getcwd(), "lit_label_studio", "check_labeling_task_and_export.py")
+        run_command = f"python {script_path} --label_studio_url {self.label_studio_url} --data_dir {self.data_dir} --api_key {self.user_token}"
+        self.label_studio.run(run_command, venv_name=label_studio_venv, wait_for_exit=True, timer=time)
 
     def run(self):
         if self.count == 0:
             self.start_label_studio()
-        # time.sleep(10)
-        self.build_labeling_task()
-        
-        # ### previous version
-        # if self.count == 0:
-        #     # start
-        #     self.start_label_studio()
-        # # connect and build labeling task
-        # if self.count == 1:
-        #     print("count is 1")
-        #     # sleep should be 45 on the cloud
-        #     time.sleep(1) # wait for label studio to start, eliminating this prevents project creation.
-        #     self.build_labeling_task()
+            self.build_labeling_task() # seems to have no effect whether inside or outside this if
 
-        # if self.count == 1 and self.label_studio_started == False:
-        #     self.check_label_studio_running(time = time.time())
-        #     # time.sleep(10) # wait for label studio to start, eliminating this prevents project creation.
-        # if self.count == 1 and self.label_studio_started == True:
-        #     self.build_labeling_task()
-        #     # # someone has to connect to the label studio server
-        #     # self.build_labeling_task()
+        # execute another command on self.label_studio that checks for updates in the annotation files. if so, we export the data and convert to lightning pose format.
+        time.sleep(15) # TODO: make this programmatic check for 15 seconds difference
 
-
+        # check time and see if 5 seconds have passed
+    
+        self.check_labeling_task_and_export(time=time.time())
