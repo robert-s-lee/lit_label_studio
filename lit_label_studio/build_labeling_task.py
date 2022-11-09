@@ -42,9 +42,9 @@ with open(args.label_config, 'r') as f:
 @retry
 def connect_to_label_studio():
     # Connect to Label Studio
-    print("Connecting to LabelStudio...")
     return Client(url=args.label_studio_url, api_key=args.api_key)
 
+print("Connecting to LabelStudio at %s..." % args.label_studio_url)
 label_studio_client = connect_to_label_studio()
 
 
@@ -66,12 +66,12 @@ label_studio_client = connect_to_label_studio()
 # use the retry decorator to retry MAX_CONNECT_ATTEMPTS times
 @retry
 def start_project():
-    print("Creating LabelStudio project...")
     project = label_studio_client.start_project(
         title=args.project_name,
         label_config=label_config)
     return project
 
+print("Creating LabelStudio project...")
 label_studio_project = start_project()
 
 # DB: commenting the bellow to test retry decorator
@@ -106,9 +106,9 @@ json = {
 # use the retry decorator to retry MAX_CONNECT_ATTEMPTS times
 @retry
 def create_data_source():
-    print("Creating LabelStudio data source...")
     label_studio_project.make_request('POST', '/api/storages/localfiles', json=json)
 
+print("Creating LabelStudio data source...")
 create_data_source()
 print("LabelStudio data source created.")
 
